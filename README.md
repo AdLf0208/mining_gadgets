@@ -1,62 +1,19 @@
-# Mining Gadgets — Horizon port (slice 1: the laser and its FE)
+# Mining Gadgets — a Horizon port
 
-A native Horizon port of **Mining Gadgets 1.18.8**
-(`Direwolf20-MC/MiningGadgets`, **MIT**): the Mining Gadget, a laser that mines
-the block you aim at — or, with a size upgrade, the plane of the aimed face —
-and pays for each block out of its own FE buffer.
+**Mining Gadgets** is a Minecraft mod. Because Mining with Lasers is cool. This repository is a **port of it to [Horizon](https://github.com/horizon-rust/horizon)**, the Rust engine for Minecraft Java 26.3. It carries the complete source of the port plus the content files it ships, and installs as a single `.hmod` package.
 
-**LOCAL-ONLY** until the maintainer approves publishing (ARCHITECTURE.md §8 of
-the porting campaign). MIT is licence rank 0 (permissive); approval is still
-required.
+Upstream: [Direwolf20-MC/MiningGadgets](https://github.com/Direwolf20-MC/MiningGadgets) — licence **MIT**.
 
-This is the **SDK package** layout (mod API 0.2, one flat `.hmod`): the code and
-the content travel in one file. Provenance, hashes and the upstream commit are in
-`ports/_shared/carry-work/mininggadgets/SOURCE.md` of the porting tree; the
-behaviour reading is in `FINDINGS.md`; the ladder, deviations, gaps and the
-migration record are in `notes.md`; what is carried and what is written is in
-`CONTENT.md`.
+| | |
+|---|---|
+| Upstream mod | Mining Gadgets ([source](https://github.com/Direwolf20-MC/MiningGadgets)) |
+| Ported to | Horizon 0b14f8a, Minecraft Java 26.3, mod API `0.2` |
+| Package | `mininggadgets.hmod` (install it with the Horizon launcher) |
+| Licence | **MIT** — the upstream mod's licence; see [Licence and credit](#licence-and-credit) |
 
-## Layout
+## What this port implements
 
-```
-horizon-mod.toml           the only manifest: id, version 0.2.0, api 0.2, [native] pins
-Cargo.toml                 one crate; its only dependency is horizon-mod-api from .horizon/sdk/
-src/lib.rs                 the one #[mod_api::horizon_mod] impl Hooks, and the gadget item Part
-src/gadget.rs              the glue: component data, the FE capability, the laser, the commands
-src/runtime.rs             pure logic (cost, reserve, plane, dig time) — 24 tests, byte-identical to 0.1.0
-assets/mininggadgets/…     the jar's item models, textures, names and 26.3 model definitions
-data/mininggadgets/…       the item declarations, recipes, creative tab and the c: convention tags
-LICENSE, LICENSE-NOTICE.md the MIT text and where it was read from, inside the package
-mininggadgets.hmod         the deliverable (built by `cargo horizon-mod build`)
-tools/{assemble_content.py,e2e.sh}  the content assembler and the in-game scenario
-```
-
-`src/runtime.rs` is the campaign's rule: the pure decisions are a plain module
-with no `mod_api` types, so they are tested by `cargo test` alone and did not
-change when the container did.
-
-## Building
-
-The launcher fetches the SDK into `.horizon/sdk/` (gitignored) and compiles the
-crate against the pinned game build:
-
-```sh
-ports/tools/build-slot.sh run --job mininggadgets-sdk --port ports/mininggadgets --step build -- \
-    bash -c 'cd ports/mininggadgets && CARGO_INCREMENTAL=0 cargo test --offline'
-rm -f Cargo.lock            # a packed lock changes the artifact
-cargo horizon-mod build     # -> target/horizon-mod/mininggadgets.hmod
-cargo horizon-mod check mininggadgets.hmod
-cargo horizon-mod fits mininggadgets.hmod --build nightly
-```
-
-Every compile goes through the campaign's build-slot runner (never a bare
-`cargo` outside a lease, never `--target-dir`). The in-game scenario
-(`tools/e2e.sh`) needs a game built by `horizon-launcher native-build` for this
-package; run it with `GAME=<that binary>` (and `SELFTEST=1` for the fail leg).
-`horizon-launcher` is not installed on the machine this version was built on, so
-no 0.2.0 in-game run is claimed — see `notes.md`.
-
-## What the slice does
+### What the slice does
 
 Right click a block with the gadget: the aimed face's plane (one block, or a
 3×3/5×5/7×7 square with a size upgrade) is mined, each block costing 200 FE plus
@@ -68,3 +25,48 @@ in the air ray-casts five blocks first. `/mininggadgets info` reports the charge
 renderblock ghost, the client beam/particles/sounds, the settings and filter
 screens, the Modification Table, and the magnet, freezing, light placer and void
 junk effects. `notes.md` has the full gap list.
+
+## Not yet ported
+
+- **One pulse per right click, not a held use.** Upstream starts a 72,000-tick
+- **No renderblock ghost.** Upstream replaces each target with a ghost block
+- **No client half at all**: no beam, no laser sound loop, no particles, no
+- **No Modification Table** (`modificationtable` block, its menu, the ghost
+- **Upgrade effects not implemented**: Magnet (drops go to the inventory),
+- **No energy interop beyond the buffer**: the gadget answers
+- **The battery upgrades do not enlarge the buffer.** Upstream stores capacity
+- **A container target still opens its screen** (pin gap 2 above); the gadget
+
+## Installing
+
+1. Install the [Horizon launcher](https://github.com/horizon-rust/horizon/releases) (0.2.70 or newer).
+2. Add `mininggadgets.hmod` to the instance's mods.
+3. The package is pinned to a specific Horizon build; the launcher checks that pin.
+
+## Licence and credit
+
+Mining Gadgets was created by its upstream authors; the code, models and assets in the original mod
+remain theirs and are used here under **MIT**. The Rust in this repository is a clean-room
+rewrite for Horizon, not a translation of the original source.
+
+- `LICENSE` — the upstream licence text.
+- `LICENSE-NOTICE.md` — what this port carries and where it came from.
+- The upstream project: https://github.com/Direwolf20-MC/MiningGadgets
+
+## Technical details
+
+```
+horizon-mod.toml   package manifest (id, version, api, [native] pin)
+Cargo.toml         the crate; depends on `horizon-mod-api` from the fetched SDK
+src/               lib.rs (the one `impl Hooks`), runtime.rs (pure logic + tests), glue
+assets/ data/      the content the package ships
+tools/             content generators and the e2e scenario
+```
+
+- Build: `cargo horizon-mod build` (packages; it does not compile against the game).
+- Test: `cargo test`, `cargo clippy --all-targets -- -D warnings`.
+- In-game: `ports/tools/launcher-game.sh run mininggadgets` in the campaign tree, or install the
+  `.hmod` and play; the harness scenario is `tools/e2e.sh`.
+
+This repository is generated from the campaign's port at `ports/mininggadgets/`; the port's own
+`notes.md` is the full record (decisions, traps, evidence).
