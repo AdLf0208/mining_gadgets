@@ -1,0 +1,37 @@
+# Mining Gadgets for Horizon — slice 1, one flat SDK package.
+#
+# Migrated 2026-11-18 from the retired `.hnmod` container (Horizon's mod-API merge
+# #16941; the registry closed this port's former submission #833 with the format
+# purge). The manifest below is the only one: identity, the content capability and
+# the exact native pins. `assets/` and `data/` are the carried content (the three
+# gadget tiers and the 24 upgrade cards: models, textures, names, recipes), `src/`
+# is the port's code; both halves travel in one file, which is the point of the SDK
+# layout.
+#
+# Licence: MIT, read from the jar's `META-INF/neoforge.mods.toml` (rank 0,
+# permissive). `LICENSE` and `LICENSE-NOTICE.md` travel inside the package.
+# Local-only until the maintainer approves publishing (ARCHITECTURE.md §8).
+id = "mininggadgets"
+name = "Mining Gadgets"
+version = "0.2.0"
+description = """A port of Mining Gadgets for Horizon, slice 1: the Mining Gadget, a laser that mines the
+block you aim at — or, with a size upgrade, the plane of the aimed face — and pays 200 FE plus every
+active upgrade's own price per block out of its 1,000,000 FE buffer. The charge is a real
+Capabilities.Energy.ITEM buffer, the drops are rolled with a gadget carrying the silk touch and
+fortune upgrades, a shot locks the gadget for the plane's dig time, and /mininggadgets reports the
+charge. Not yet ported: the held-use trigger, the renderblock ghost, the client beam/particles/sounds,
+the settings and filter screens, the Modification Table, and the magnet, freezing, light placer and
+void junk effects."""
+authors = ["Direwolf20", "ErrorMikey", "AdLf0208"]
+# The content API: exact and checked. This package ships carried content beside its code, so the
+# capability is a real claim (three items are declared); it is also the one value the schema has.
+api = "0.2"
+# The installation side, not a hook's: the gadget runs on the server, and a LAN host or a
+# single-player world runs it inside the client installation.
+side = "both"
+capabilities = ["registries"]
+
+[native]
+game = "26.3"
+horizon = "0b14f8acfd97fa2c750e42795249dcc981178ca4"
+mixins = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"
